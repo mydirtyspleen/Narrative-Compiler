@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADM-API Dashboard</title>
+<style>
+:root {
+  --bg:       #0d0f14;
+  --bg2:      #141720;
+  --bg3:      #1c2030;
+  --border:   #2a2f40;
+  --dim:      #3a4055;
+  --text:     #c8d0e0;
+  --muted:    #6b7592;
+  --green:    #3ddc97;
+  --amber:    #f0b429;
+  --red:      #e85d5d;
+  --blue:     #5b9cf6;
+  --purple:   #a78bfa;
+  --combat:   #e85d5d;
+  --politics: #f0b429;
+  --economy:  #3ddc97;
+  --ecology:  #22c55e;
+  --social:   #a78bfa;
+  --weather:  #5b9cf6;
+  --exploration: #fb923c;
+  --mono:     'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --sans:     -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13px; line-height: 1.5; overflow: hidden; }
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.app { display: grid; grid-template-rows: 48px 1fr; height: 100vh; }
+.topbar { display: flex; align-items: center; gap: 16px; padding: 0 16px; background: var(--bg2); border-bottom: 1px solid var(--border); z-index: 10; }
+.topbar-title { font-family: var(--mono); font-size: 14px; font-weight: 600; color: var(--green); letter-spacing: .05em; }
+.topbar-sep { width: 1px; height: 20px; background: var(--border); }
+.topbar-metric { display: flex; flex-direction: column; line-height: 1.2; }
+.topbar-metric span:first-child { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+.topbar-metric span:last-child  { font-family: var(--mono); font-size: 13px; color: var(--text); }
+.topbar-spacer { flex: 1; }
+.topbar-status { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); }
+.dot.green  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.dot.amber  { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+
+.body { display: grid; grid-template-columns: 280px 1fr 300px; overflow: hidden; }
+
+/* ── Sidebar ────────────────────────────────────────────────────────────── */
+.sidebar { border-right: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; gap: 0; }
+.panel { border-bottom: 1px solid var(--border); }
+.panel-hdr { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg2); cursor: pointer; user-select: none; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.panel-hdr .chevron { transition: transform .15s; }
+.panel-hdr.open .chevron { transform: rotate(90deg); }
+.panel-body { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.panel-body.hidden { display: none; }
+
+/* ── Form elements ──────────────────────────────────────────────────────── */
+label { font-size: 11px; color: var(--muted); display: block; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .06em; }
+input[type="text"], input[type="password"], select, textarea {
+  width: 100%; padding: 6px 8px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 4px; color: var(--text); font-family: var(--mono); font-size: 12px;
+  outline: none; transition: border-color .15s;
+}
+input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+textarea { resize: vertical; min-height: 60px; }
+input[type="range"] { width: 100%; accent-color: var(--green); }
+
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.intensity-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.intensity-val { font-family: var(--mono); font-size: 14px; color: var(--green); width: 36px; text-align: right; }
+
+btn, button, .btn {
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg3); color: var(--text); cursor: pointer; font-size: 12px;
+  font-family: var(--mono); transition: all .15s; white-space: nowrap;
+}
+.btn-primary { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
+.btn-primary:hover { background: #5eeaaa; }
+.btn-amber  { background: var(--amber); color: #000; border-color: var(--amber); font-weight: 600; }
+.btn-amber:hover { background: #f5c440; }
+.btn-red    { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-red:hover { background: #f07070; }
+.btn-sm { padding: 4px 8px; font-size: 11px; }
+button:hover { border-color: var(--blue); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+
+/* ── Center content ─────────────────────────────────────────────────────── */
+.center { overflow-y: auto; display: flex; flex-direction: column; gap: 0; }
+.content-panel { border-bottom: 1px solid var(--border); }
+.content-panel-hdr { padding: 10px 16px; background: var(--bg2); font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; display: flex; align-items: center; gap: 8px; }
+.content-panel-body { padding: 16px; }
+
+/* ── Narrative output ───────────────────────────────────────────────────── */
+.narrative-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 40px 16px; }
+.narrative-scene { font-size: 14px; color: var(--text); font-weight: 500; margin-bottom: 8px; padding: 10px 12px; background: var(--bg3); border-left: 3px solid var(--green); border-radius: 0 4px 4px 0; }
+.narrative-cinematic { font-size: 12px; color: var(--muted); line-height: 1.7; margin-bottom: 12px; font-style: italic; }
+.narrative-meta { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.badge { padding: 2px 8px; border-radius: 3px; font-family: var(--mono); font-size: 11px; font-weight: 600; }
+.badge-combat     { background: rgba(232,93,93,.15);  color: var(--combat); }
+.badge-politics   { background: rgba(240,180,41,.15); color: var(--politics); }
+.badge-economy    { background: rgba(61,220,151,.15); color: var(--economy); }
+.badge-ecology    { background: rgba(34,197,94,.15);  color: var(--ecology); }
+.badge-social     { background: rgba(167,139,250,.15);color: var(--social); }
+.badge-weather    { background: rgba(91,156,246,.15); color: var(--weather); }
+.badge-exploration{ background: rgba(251,146,60,.15); color: var(--exploration); }
+.badge-default    { background: var(--bg3); color: var(--muted); }
+
+/* ── Tension curve ──────────────────────────────────────────────────────── */
+.tension-wrap { margin-bottom: 12px; }
+.tension-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+#tensionChart { width: 100%; height: 80px; display: block; }
+
+/* ── Consequences ───────────────────────────────────────────────────────── */
+.consequences { margin-bottom: 12px; }
+.consequence-item { display: flex; align-items: flex-start; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.consequence-item:last-child { border-bottom: none; }
+.consequence-arrow { color: var(--amber); font-family: var(--mono); flex-shrink: 0; }
+
+/* ── Suggested events ───────────────────────────────────────────────────── */
+.suggestions { display: flex; gap: 6px; flex-wrap: wrap; }
+.suggestion-pill { padding: 4px 10px; border: 1px solid var(--border); border-radius: 12px; font-size: 11px; font-family: var(--mono); display: flex; align-items: center; gap: 5px; cursor: pointer; transition: border-color .15s; }
+.suggestion-pill:hover { border-color: var(--blue); }
+.suggestion-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+/* ── Right panel ────────────────────────────────────────────────────────── */
+.rightpanel { border-left: 1px solid var(--border); overflow-y: auto; display: flex; flex-direction: column; gap: 0; }
+
+/* ── WS Stream ──────────────────────────────────────────────────────────── */
+.stream-log { background: var(--bg); font-family: var(--mono); font-size: 11px; overflow-y: auto; max-height: 200px; padding: 8px; }
+.stream-entry { padding: 4px 6px; border-radius: 3px; margin-bottom: 3px; border-left: 2px solid var(--dim); }
+.stream-entry.info   { border-color: var(--blue); color: var(--muted); }
+.stream-entry.update { border-color: var(--green); }
+.stream-entry.error  { border-color: var(--red); color: var(--red); }
+.stream-ts { color: var(--dim); font-size: 10px; }
+
+/* ── Timeline ───────────────────────────────────────────────────────────── */
+.timeline { padding: 0 12px; display: flex; flex-direction: column; gap: 0; }
+.timeline-item { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.timeline-item:last-child { border-bottom: none; }
+.timeline-icon { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.timeline-body { flex: 1; }
+.timeline-title { font-size: 12px; font-weight: 600; color: var(--text); }
+.timeline-sub   { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+.timeline-tension { display: flex; align-items: center; gap: 4px; margin-top: 3px; }
+.tension-bar { height: 4px; background: var(--green); border-radius: 2px; transition: width .3s; }
+.tension-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+
+/* ── Replay ─────────────────────────────────────────────────────────────── */
+.replay-list { display: flex; flex-direction: column; gap: 6px; }
+.replay-item { padding: 8px; background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; }
+.replay-item-name { font-family: var(--mono); font-size: 12px; font-weight: 600; color: var(--text); }
+.replay-item-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.replay-item-actions { display: flex; gap: 6px; margin-top: 6px; }
+.hash-match { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11px; padding: 2px 6px; border-radius: 3px; }
+.hash-match.ok  { background: rgba(61,220,151,.15); color: var(--green); }
+.hash-match.fail{ background: rgba(232,93,93,.15);  color: var(--red); }
+
+/* ── Hash display ───────────────────────────────────────────────────────── */
+.hash-display { font-family: var(--mono); font-size: 10px; color: var(--muted); word-break: break-all; background: var(--bg); padding: 4px 6px; border-radius: 3px; margin-top: 4px; }
+
+/* ── Tabs ───────────────────────────────────────────────────────────────── */
+.tabs { display: flex; border-bottom: 1px solid var(--border); }
+.tab { padding: 8px 14px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* ── Misc ───────────────────────────────────────────────────────────────── */
+.mono   { font-family: var(--mono); }
+.green  { color: var(--green); }
+.amber  { color: var(--amber); }
+.red    { color: var(--red); }
+.blue   { color: var(--blue); }
+.muted  { color: var(--muted); }
+.flex-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.spinner { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--border); border-top-color: var(--green); border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: 20px; right: 20px; padding: 8px 14px; background: var(--bg2); border: 1px solid var(--border); border-radius: 4px; font-size: 12px; z-index: 100; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.section-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+<!-- ── Top bar ────────────────────────────────────────────────────────── -->
+<div class="topbar">
+  <span class="topbar-title">⬡ ADM-API</span>
+  <div class="topbar-sep"></div>
+  <div class="topbar-metric">
+    <span>Requests</span>
+    <span id="m-requests">—</span>
+  </div>
+  <div class="topbar-metric">
+    <span>Avg latency</span>
+    <span id="m-latency">—</span>
+  </div>
+  <div class="topbar-metric">
+    <span>WS sessions</span>
+    <span id="m-ws">—</span>
+  </div>
+  <div class="topbar-metric">
+    <span>P95</span>
+    <span id="m-p95">—</span>
+  </div>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-status">
+    <div class="dot" id="api-dot"></div>
+    <span id="api-status">checking…</span>
+  </div>
+</div>
+
+<!-- ── Main body ──────────────────────────────────────────────────────── -->
+<div class="body">
+
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar">
+
+    <!-- API Key -->
+    <div class="panel">
+      <div class="panel-hdr open" onclick="togglePanel(this)">
+        <span>Auth</span><span class="chevron">▶</span>
+      </div>
+      <div class="panel-body">
+        <div>
+          <label>API Key</label>
+          <input type="password" id="apiKey" placeholder="adm_test_... or adm_live_..." autocomplete="off">
+        </div>
+        <div>
+          <label>Base URL</label>
+          <input type="text" id="baseUrl" value="">
+        </div>
+        <button class="btn-primary" onclick="checkHealth()" style="width:100%">Connect</button>
+        <div id="key-usage" class="muted" style="font-size:11px;font-family:var(--mono)"></div>
+      </div>
+    </div>
+
+    <!-- Event Builder -->
+    <div class="panel">
+      <div class="panel-hdr open" onclick="togglePanel(this)">
+        <span>Event Builder</span><span class="chevron">▶</span>
+      </div>
+      <div class="panel-body">
+        <div class="row2">
+          <div>
+            <label>Event ID</label>
+            <input type="text" id="evtId" placeholder="evt-001">
+          </div>
+          <div>
+            <label>Type</label>
+            <select id="evtType">
+              <option value="combat">combat</option>
+              <option value="politics">politics</option>
+              <option value="economy">economy</option>
+              <option value="ecology">ecology</option>
+              <option value="social">social</option>
+              <option value="weather">weather</option>
+              <option value="exploration">exploration</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label>Intensity</label>
+          <div class="intensity-row">
+            <input type="range" id="evtIntensity" min="0" max="1" step="0.01" value="0.75" oninput="document.getElementById('evtIntensityVal').textContent=parseFloat(this.value).toFixed(2)">
+            <span class="intensity-val" id="evtIntensityVal">0.75</span>
+          </div>
+        </div>
+        <div>
+          <label>Actors (comma-separated)</label>
+          <input type="text" id="evtActors" placeholder="Iron Pact, Northern Legion">
+        </div>
+        <div>
+          <label>Tags (comma-separated)</label>
+          <input type="text" id="evtTags" placeholder="war, conflict">
+        </div>
+        <div class="flex-row">
+          <button onclick="addEvent()" style="flex:1">+ Add to Batch</button>
+          <button class="btn-sm" onclick="clearBatch()">Clear</button>
+        </div>
+        <div id="batch-preview" style="font-size:11px;color:var(--muted);font-family:var(--mono)"></div>
+        <button class="btn-primary" id="btn-render" onclick="doRender()" style="width:100%">Render Batch →</button>
+      </div>
+    </div>
+
+    <!-- WebSocket Stream -->
+    <div class="panel">
+      <div class="panel-hdr open" onclick="togglePanel(this)">
+        <span>WebSocket Stream</span><span class="chevron">▶</span>
+      </div>
+      <div class="panel-body">
+        <div>
+          <label>Session ID</label>
+          <input type="text" id="wsSession" placeholder="stream-session-001">
+        </div>
+        <div class="flex-row">
+          <button id="btn-ws-connect" class="btn-primary" onclick="wsConnect()" style="flex:1">Connect</button>
+          <button id="btn-ws-close" onclick="wsClose()" style="flex:1" disabled>Disconnect</button>
+        </div>
+        <button onclick="wsSendCurrentEvent()" style="width:100%">Send Current Event →</button>
+        <button onclick="wsReset()" style="width:100%" class="btn-sm">Reset Session</button>
+      </div>
+    </div>
+
+    <!-- Replay -->
+    <div class="panel">
+      <div class="panel-hdr open" onclick="togglePanel(this)">
+        <span>Replay</span><span class="chevron">▶</span>
+      </div>
+      <div class="panel-body">
+        <div>
+          <label>Replay Name</label>
+          <input type="text" id="replayName" placeholder="my-combat-scenario">
+        </div>
+        <div>
+          <label>Session ID</label>
+          <input type="text" id="replaySession" placeholder="replay-session-001">
+        </div>
+        <div class="flex-row">
+          <button onclick="saveReplay()" style="flex:1">Save Batch</button>
+          <button onclick="loadReplays()" style="flex:1">List Replays</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Simulate -->
+    <div class="panel">
+      <div class="panel-hdr open" onclick="togglePanel(this)">
+        <span>Simulate</span><span class="chevron">▶</span>
+      </div>
+      <div class="panel-body">
+        <div class="row2">
+          <div>
+            <label>Session ID</label>
+            <input type="text" id="simSession" placeholder="sim-session-001">
+          </div>
+          <div>
+            <label>Steps (1–10)</label>
+            <input type="text" id="simSteps" value="3" style="width:100%">
+          </div>
+        </div>
+        <button class="btn-amber" onclick="doSimulate()" style="width:100%">Simulate →</button>
+      </div>
+    </div>
+
+  </div>
+  <!-- / LEFT SIDEBAR -->
+
+  <!-- CENTER -->
+  <div class="center">
+
+    <!-- Narrative Output -->
+    <div class="content-panel">
+      <div class="content-panel-hdr">
+        <span>Narrative State</span>
+        <div id="render-spinner" style="display:none"><div class="spinner"></div></div>
+        <div id="render-latency" class="mono muted" style="font-size:11px;margin-left:auto"></div>
+      </div>
+      <div class="content-panel-body" id="narrative-output">
+        <div class="narrative-empty">
+          Build an event batch and click <strong>Render Batch →</strong><br>
+          to see the deterministic NarrativeState here.
+        </div>
+      </div>
+    </div>
+
+    <!-- Tension Curve Chart -->
+    <div class="content-panel" id="tension-panel" style="display:none">
+      <div class="content-panel-hdr">Tension Curve</div>
+      <div class="content-panel-body">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:8px">
+          Per-event tension values — formula: (base_weight + intensity) / 2 ± tag_modifier, clamped [0, 1]
+        </div>
+        <svg id="tensionChart" viewBox="0 0 600 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="tension-axis" style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px"></div>
+      </div>
+    </div>
+
+    <!-- Consequence Chain -->
+    <div class="content-panel" id="consequence-panel" style="display:none">
+      <div class="content-panel-hdr">Consequence Chain</div>
+      <div class="content-panel-body" id="consequence-list"></div>
+    </div>
+
+    <!-- Simulation Output -->
+    <div class="content-panel" id="sim-output-panel" style="display:none">
+      <div class="content-panel-hdr">
+        <span>Simulation — World Projection</span>
+        <div id="sim-spinner" style="display:none"><div class="spinner"></div></div>
+      </div>
+      <div class="content-panel-body" id="sim-output"></div>
+    </div>
+
+  </div>
+  <!-- / CENTER -->
+
+  <!-- RIGHT PANEL -->
+  <div class="rightpanel">
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" onclick="setTab('timeline')">Timeline</div>
+      <div class="tab" onclick="setTab('stream')">WS Stream</div>
+      <div class="tab" onclick="setTab('replays')">Replays</div>
+    </div>
+
+    <!-- Timeline pane -->
+    <div class="tab-pane active" id="pane-timeline">
+      <div style="padding:12px">
+        <div class="section-title">Event History</div>
+      </div>
+      <div class="timeline" id="timeline-list">
+        <div class="muted" style="padding:12px;font-size:12px">No events yet.</div>
+      </div>
+    </div>
+
+    <!-- WS Stream pane -->
+    <div class="tab-pane" id="pane-stream">
+      <div style="padding:12px;border-bottom:1px solid var(--border)">
+        <div class="section-title">Live Updates</div>
+        <div id="ws-status" class="mono" style="font-size:11px;color:var(--muted)">Disconnected</div>
+      </div>
+      <div class="stream-log" id="stream-log"></div>
+    </div>
+
+    <!-- Replays pane -->
+    <div class="tab-pane" id="pane-replays">
+      <div style="padding:12px;border-bottom:1px solid var(--border)">
+        <div class="section-title">Saved Replays</div>
+        <div style="font-size:11px;color:var(--muted)">Hash verification proves determinism holds.</div>
+      </div>
+      <div style="padding:12px">
+        <div class="replay-list" id="replay-list">
+          <div class="muted" style="font-size:12px">No replays yet. Build a batch and save it.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- / RIGHT PANEL -->
+
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────
+
+let eventBatch    = [];
+let eventCounter  = 1;
+let activeTab     = 'timeline';
+let ws            = null;
+let wsSessionId   = null;
+let lastNarrative = null;
+let timelineItems = [];
+let metricsTimer  = null;
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+const BASE = () => (document.getElementById('baseUrl').value.trim().replace(/\/$/, '')) || window.location.origin + (window.BASE_PATH || '/api');
+const KEY  = () => document.getElementById('apiKey').value.trim();
+const $    = (id) => document.getElementById(id);
+
+function toast(msg, color = 'var(--text)') {
+  const el = $('toast');
+  el.textContent = msg;
+  el.style.color = color;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+function typeBadge(type) {
+  const cls = 'badge-' + (type || 'default');
+  return `<span class="badge ${cls}">${type || '?'}</span>`;
+}
+
+function typeColor(type) {
+  const map = { combat:'--combat', politics:'--politics', economy:'--economy',
+                ecology:'--ecology', social:'--social', weather:'--weather',
+                exploration:'--exploration' };
+  return `var(${map[type] || '--muted'})`;
+}
+
+function fmtTs() {
+  return new Date().toISOString().slice(11, 19);
+}
+
+// ─── Panel toggles ─────────────────────────────────────────────────────────
+
+function togglePanel(hdr) {
+  const body = hdr.nextElementSibling;
+  const open = hdr.classList.toggle('open');
+  body.classList.toggle('hidden', !open);
+}
+
+// ─── Tab switching ──────────────────────────────────────────────────────────
+
+function setTab(name) {
+  activeTab = name;
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    const names = ['timeline', 'stream', 'replays'];
+    t.classList.toggle('active', names[i] === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  $('pane-' + name).classList.add('active');
+}
+
+// ─── Health check ──────────────────────────────────────────────────────────
+
+async function checkHealth() {
+  try {
+    const r = await fetch(BASE() + '/healthz');
+    const d = await r.json();
+    $('api-dot').className = 'dot green';
+    $('api-status').textContent = `${d.service} v${d.version}`;
+    toast('Connected', 'var(--green)');
+    fetchMetrics();
+    fetchUsage();
+    if (!metricsTimer) metricsTimer = setInterval(fetchMetrics, 10000);
+  } catch(e) {
+    $('api-dot').className = 'dot amber';
+    $('api-status').textContent = 'unreachable';
+    toast('Connection failed', 'var(--red)');
+  }
+}
+
+async function fetchMetrics() {
+  try {
+    const r = await fetch(BASE() + '/v1/metrics');
+    const d = await r.json();
+    $('m-requests').textContent = d.total_requests ?? '—';
+    $('m-latency').textContent  = d.avg_latency_ms != null ? d.avg_latency_ms.toFixed(1) + 'ms' : '—';
+    $('m-ws').textContent       = d.active_ws_sessions ?? '—';
+    $('m-p95').textContent      = d.p95_latency_ms != null ? d.p95_latency_ms.toFixed(1) + 'ms' : '—';
+  } catch(_) {}
+}
+
+async function fetchUsage() {
+  if (!KEY()) return;
+  try {
+    const r = await apiFetch('/v1/usage');
+    const d = await r.json();
+    $('key-usage').textContent = `${d.requests_today}/${d.rate_limit} today (${d.tier})`;
+  } catch(_) {}
+}
+
+// ─── API fetch wrapper ──────────────────────────────────────────────────────
+
+async function apiFetch(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+  if (KEY()) headers['X-API-Key'] = KEY();
+  return fetch(BASE() + path, { ...opts, headers: { ...headers, ...(opts.headers || {}) } });
+}
+
+// ─── Event Batch ────────────────────────────────────────────────────────────
+
+function addEvent() {
+  const id        = $('evtId').value.trim() || `evt-${String(eventCounter++).padStart(3,'0')}`;
+  const type      = $('evtType').value;
+  const intensity = parseFloat($('evtIntensity').value);
+  const actors    = $('evtActors').value.split(',').map(s => s.trim()).filter(Boolean);
+  const tags      = $('evtTags').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  eventBatch.push({ id, type, intensity, actors, tags, payload: {} });
+  $('evtId').value = '';
+  eventCounter++;
+  renderBatchPreview();
+  toast(`Added ${type} event (${intensity.toFixed(2)})`, 'var(--green)');
+}
+
+function clearBatch() {
+  eventBatch = [];
+  renderBatchPreview();
+  toast('Batch cleared');
+}
+
+function renderBatchPreview() {
+  const el = $('batch-preview');
+  if (eventBatch.length === 0) { el.textContent = 'Batch empty'; return; }
+  el.innerHTML = eventBatch.map((e, i) =>
+    `<div style="padding:2px 0;color:var(--text)">${i+1}. ${typeBadge(e.type)} <span style="color:var(--muted)">${e.id}</span> <span class="green">${e.intensity.toFixed(2)}</span></div>`
+  ).join('');
+}
+
+// ─── Render ─────────────────────────────────────────────────────────────────
+
+async function doRender() {
+  if (eventBatch.length === 0) { toast('Add at least one event first', 'var(--amber)'); return; }
+  const sessionId = $('wsSession').value.trim() || 'dashboard-session';
+
+  $('render-spinner').style.display = '';
+  $('render-latency').textContent   = '';
+  $('btn-render').disabled = true;
+
+  const t0 = performance.now();
+  try {
+    const r = await apiFetch('/v1/render', {
+      method: 'POST',
+      body:   JSON.stringify({ session_id: sessionId, events: eventBatch }),
+    });
+    const ms = (performance.now() - t0).toFixed(1);
+    const d  = await r.json();
+
+    if (!r.ok) {
+      toast(`Error ${r.status}: ${d.message || d.error}`, 'var(--red)');
+      return;
+    }
+
+    lastNarrative = d;
+    $('render-latency').textContent = `${ms}ms`;
+    renderNarrativeState(d);
+    addToTimeline(eventBatch, d);
+    fetchMetrics();
+    fetchUsage();
+    toast(`Rendered ${eventBatch.length} events in ${ms}ms`, 'var(--green)');
+  } catch(e) {
+    toast('Request failed: ' + e.message, 'var(--red)');
+  } finally {
+    $('render-spinner').style.display = 'none';
+    $('btn-render').disabled = false;
+  }
+}
+
+function renderNarrativeState(d) {
+  const domCat = d.metadata?.dominant_category;
+  const html = `
+    <div class="narrative-scene">${d.scene_summary}</div>
+    <div class="narrative-cinematic">${d.cinematic_description}</div>
+    <div class="narrative-meta">
+      ${typeBadge(domCat)}
+      <span class="badge badge-default">⟳ ${d.metadata?.event_count ?? '?'} events</span>
+      <span class="badge badge-default">avg ${(d.metadata?.avg_intensity ?? 0).toFixed(2)}</span>
+      ${d.character_focus ? `<span class="badge" style="background:rgba(91,156,246,.12);color:var(--blue)">⬡ ${d.character_focus}</span>` : ''}
+    </div>
+    <div class="section-title" style="margin-bottom:6px">Suggested Next</div>
+    <div class="suggestions" style="margin-bottom:16px">
+      ${(d.suggested_next_events || []).map(s => `
+        <div class="suggestion-pill" title="${s.description}" onclick="applysuggestion('${s.type}',${s.intensity})">
+          <div class="suggestion-dot" style="background:${typeColor(s.type)}"></div>
+          <span style="color:${typeColor(s.type)}">${s.type}</span>
+          <span class="muted">${s.intensity.toFixed(2)}</span>
+        </div>`).join('')}
+    </div>`;
+  $('narrative-output').innerHTML = html;
+
+  renderTensionChart(d.tension_curve);
+  renderConsequences(d.narrative_consequences);
+}
+
+function applysuggestion(type, intensity) {
+  $('evtType').value = type;
+  $('evtIntensity').value = intensity;
+  $('evtIntensityVal').textContent = intensity.toFixed(2);
+  toast(`Applied suggestion: ${type} @ ${intensity.toFixed(2)}`);
+}
+
+// ─── Tension Chart ──────────────────────────────────────────────────────────
+
+function renderTensionChart(curve) {
+  if (!curve || curve.length === 0) return;
+  const panel = $('tension-panel');
+  panel.style.display = '';
+
+  const svg    = $('tensionChart');
+  const W      = 600, H = 80, pad = 20;
+  const n      = curve.length;
+  const xStep  = n > 1 ? (W - 2*pad) / (n - 1) : 0;
+
+  const pts = curve.map((v, i) => ({ x: pad + i * xStep, y: H - pad - v * (H - 2*pad) }));
+  const d   = pts.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(' ');
+
+  // area fill
+  const area = `${d} L ${pts[pts.length-1].x} ${H-pad} L ${pts[0].x} ${H-pad} Z`;
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%"   stop-color="#3ddc97" stop-opacity=".4"/>
+        <stop offset="100%" stop-color="#3ddc97" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <!-- grid lines -->
+    ${[0.25, 0.5, 0.75, 1].map(v => {
+      const y = H - pad - v * (H - 2*pad);
+      return `<line x1="${pad}" y1="${y}" x2="${W-pad}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+    }).join('')}
+    <!-- labels -->
+    ${[0.25, 0.5, 0.75, 1.0].map(v => {
+      const y = H - pad - v * (H - 2*pad);
+      return `<text x="${pad-4}" y="${y+3}" font-size="8" fill="var(--muted)" text-anchor="end">${v.toFixed(2)}</text>`;
+    }).join('')}
+    <path d="${area}" fill="url(#tg)"/>
+    <path d="${d}" stroke="var(--green)" stroke-width="2" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+    ${pts.map((p, i) => `
+      <circle cx="${p.x}" cy="${p.y}" r="4" fill="var(--bg)" stroke="var(--green)" stroke-width="2"/>
+      <text x="${p.x}" y="${H-3}" font-size="8" fill="var(--muted)" text-anchor="middle">${i+1}</text>
+      <title>Event ${i+1}: ${curve[i].toFixed(3)}</title>`).join('')}
+  `;
+
+  $('tension-axis').innerHTML = curve.map((v, i) =>
+    `<span>${v.toFixed(2)}</span>`).join('');
+}
+
+// ─── Consequences ────────────────────────────────────────────────────────────
+
+function renderConsequences(consequences) {
+  if (!consequences || consequences.length === 0) return;
+  const panel = $('consequence-panel');
+  panel.style.display = '';
+  $('consequence-list').innerHTML = consequences.map((c, i) =>
+    `<div class="consequence-item">
+      <span class="consequence-arrow">→</span>
+      <span>${c}</span>
+    </div>`
+  ).join('');
+}
+
+// ─── Timeline ────────────────────────────────────────────────────────────────
+
+function addToTimeline(events, narrative) {
+  const item = { events: [...events], narrative, ts: new Date() };
+  timelineItems.unshift(item);
+  renderTimeline();
+}
+
+function renderTimeline() {
+  if (timelineItems.length === 0) return;
+  $('timeline-list').innerHTML = timelineItems.slice(0, 20).map(item => {
+    const dom   = item.narrative.metadata?.dominant_category || 'combat';
+    const avg   = item.narrative.metadata?.avg_intensity ?? 0;
+    const tc    = item.narrative.tension_curve?.[0] ?? 0;
+    return `
+      <div class="timeline-item">
+        <div class="timeline-icon" style="background:${typeColor(dom)}"></div>
+        <div class="timeline-body">
+          <div class="timeline-title">${item.narrative.scene_summary.slice(0, 70)}…</div>
+          <div class="timeline-sub">${item.ts.toISOString().slice(11,19)} · ${item.events.length} events · ${typeBadge(dom)}</div>
+          <div class="timeline-tension">
+            <div class="tension-track"><div class="tension-bar" style="width:${tc*100}%"></div></div>
+            <span class="mono muted" style="font-size:10px;width:30px">${tc.toFixed(2)}</span>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ─── WebSocket stream ─────────────────────────────────────────────────────────
+
+function wsLog(msg, type = 'info') {
+  const log = $('stream-log');
+  const entry = document.createElement('div');
+  entry.className = `stream-entry ${type}`;
+  entry.innerHTML = `<span class="stream-ts">[${fmtTs()}]</span> ${msg}`;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+  // cap at 100 entries
+  while (log.children.length > 100) log.removeChild(log.firstChild);
+}
+
+function wsConnect() {
+  const key  = KEY();
+  if (!key) { toast('Enter an API key first', 'var(--amber)'); return; }
+
+  const base = BASE().replace(/^https?/, (m) => m === 'https' ? 'wss' : 'ws');
+  const url  = `${base}/v1/stream?api_key=${encodeURIComponent(key)}`;
+  wsSessionId = $('wsSession').value.trim() || `ws-${Date.now()}`;
+
+  ws = new WebSocket(url);
+  $('ws-status').textContent = 'Connecting…';
+  $('ws-status').style.color = 'var(--amber)';
+
+  ws.onopen = () => {
+    $('ws-status').textContent = `Connected · ${wsSessionId}`;
+    $('ws-status').style.color = 'var(--green)';
+    $('btn-ws-connect').disabled = true;
+    $('btn-ws-close').disabled   = false;
+    wsLog('WebSocket connected', 'info');
+    toast('WebSocket connected', 'var(--green)');
+    setTab('stream');
+  };
+
+  ws.onmessage = (e) => {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.action) {
+        wsLog(`Control: ${d.action} ${d.session_id || ''}`, 'info');
+        return;
+      }
+      if (d.error) {
+        wsLog(`Error [${d.code}]: ${d.error}`, 'error');
+        return;
+      }
+      // StreamUpdate
+      wsLog(
+        `<span class="green">${d.scene_summary?.slice(0,80)}…</span>` +
+        `<div class="muted" style="margin-top:2px">events:${d.event_count} tension:[${(d.tension_curve||[]).map(v=>v.toFixed(2)).join(',')}]</div>`,
+        'update'
+      );
+      // Also update center panel with stream data
+      if (d.tension_curve) renderTensionChart(d.tension_curve);
+      if (d.narrative_consequences) renderConsequences(d.narrative_consequences);
+    } catch(_) {
+      wsLog(e.data, 'info');
+    }
+  };
+
+  ws.onerror = () => {
+    wsLog('WebSocket error', 'error');
+    toast('WebSocket error', 'var(--red)');
+  };
+
+  ws.onclose = (e) => {
+    $('ws-status').textContent = `Disconnected (${e.code})`;
+    $('ws-status').style.color = 'var(--muted)';
+    $('btn-ws-connect').disabled = false;
+    $('btn-ws-close').disabled   = true;
+    wsLog(`Disconnected (code ${e.code})`, 'info');
+    ws = null;
+  };
+}
+
+function wsClose() {
+  if (!ws) return;
+  ws.send(JSON.stringify({ action: 'close', session_id: wsSessionId }));
+}
+
+function wsReset() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) { toast('Not connected', 'var(--amber)'); return; }
+  ws.send(JSON.stringify({ action: 'reset', session_id: wsSessionId }));
+  wsLog(`Reset session: ${wsSessionId}`, 'info');
+}
+
+function wsSendCurrentEvent() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) { toast('Connect WebSocket first', 'var(--amber)'); return; }
+  const id        = $('evtId').value.trim() || `ws-${Date.now()}`;
+  const type      = $('evtType').value;
+  const intensity = parseFloat($('evtIntensity').value);
+  const actors    = $('evtActors').value.split(',').map(s => s.trim()).filter(Boolean);
+  const tags      = $('evtTags').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  const envelope = {
+    session_id: wsSessionId,
+    event:      { id, type, intensity, actors, tags, payload: {} },
+    world_state: {},
+  };
+  ws.send(JSON.stringify(envelope));
+  wsLog(`Sent ${type} event (${intensity.toFixed(2)})`, 'info');
+  toast(`Sent ${type} event to stream`);
+}
+
+// ─── Simulate ────────────────────────────────────────────────────────────────
+
+async function doSimulate() {
+  if (eventBatch.length === 0) { toast('Add events to batch first', 'var(--amber)'); return; }
+  const sessionId = $('simSession').value.trim() || 'sim-' + Date.now();
+  const steps     = parseInt($('simSteps').value) || 3;
+
+  $('sim-spinner').style.display = '';
+  $('sim-output-panel').style.display = '';
+
+  try {
+    const r = await apiFetch('/v1/simulate', {
+      method: 'POST',
+      body:   JSON.stringify({ session_id: sessionId, current_events: eventBatch, steps }),
+    });
+    const d = await r.json();
+    if (!r.ok) { toast(`Error: ${d.message}`, 'var(--red)'); return; }
+    renderSimulation(d);
+    toast(`Simulated ${steps} steps`, 'var(--green)');
+  } catch(e) {
+    toast('Simulate failed: ' + e.message, 'var(--red)');
+  } finally {
+    $('sim-spinner').style.display = 'none';
+  }
+}
+
+function renderSimulation(d) {
+  const byStep = {};
+  (d.simulated_events || []).forEach(e => {
+    byStep[e.step] = byStep[e.step] || [];
+    byStep[e.step].push(e);
+  });
+
+  const stepsHtml = Object.entries(byStep).map(([step, evts]) => `
+    <div style="margin-bottom:12px">
+      <div class="section-title" style="color:var(--amber)">Step ${step}</div>
+      ${evts.map(e => `
+        <div style="padding:4px 0;border-bottom:1px solid var(--border);display:flex;gap:8px;align-items:flex-start">
+          ${typeBadge(e.type)}
+          <span class="mono green">${e.intensity.toFixed(2)}</span>
+          <span style="color:var(--muted);font-size:12px">${e.rationale}</span>
+        </div>`).join('')}
+    </div>`).join('');
+
+  $('sim-output').innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+      <span class="badge badge-default">Trajectory: <span class="mono ${d.world_trajectory === 'Escalating' ? 'red' : d.world_trajectory === 'De-escalating' ? 'green' : 'amber'}">${d.world_trajectory}</span></span>
+      <span class="badge badge-default">Dominant force: ${typeBadge(d.dominant_force)}</span>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="section-title">Projected Tension</div>
+      <svg id="simChart" viewBox="0 0 600 60" preserveAspectRatio="none" width="100%" height="60"></svg>
+    </div>
+    <div class="section-title">Simulated Events</div>
+    ${stepsHtml}`;
+
+  // Draw projected tension mini-chart
+  const curve  = d.projected_tension || [];
+  if (curve.length > 0) {
+    const svg = document.getElementById('simChart');
+    const W = 600, H = 60, pad = 12;
+    const n = curve.length;
+    const xStep = n > 1 ? (W - 2*pad) / (n-1) : 0;
+    const pts = curve.map((v, i) => ({ x: pad + i*xStep, y: H - pad - v*(H - 2*pad) }));
+    const dl  = pts.map((p, i) => (i===0?`M ${p.x} ${p.y}`:`L ${p.x} ${p.y}`)).join(' ');
+    svg.innerHTML = `
+      <path d="${dl} L ${pts[pts.length-1].x} ${H-pad} L ${pts[0].x} ${H-pad} Z" fill="rgba(240,180,41,.1)"/>
+      <path d="${dl}" stroke="var(--amber)" stroke-width="2" fill="none"/>
+      ${pts.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="var(--amber)"/>`).join('')}`;
+  }
+}
+
+// ─── Replay ──────────────────────────────────────────────────────────────────
+
+async function saveReplay() {
+  const name      = $('replayName').value.trim();
+  const sessionId = $('replaySession').value.trim() || 'replay-session';
+  if (!name)              { toast('Enter a replay name', 'var(--amber)'); return; }
+  if (eventBatch.length === 0) { toast('Build an event batch first', 'var(--amber)'); return; }
+
+  try {
+    const r = await apiFetch('/v1/replay/save', {
+      method: 'POST',
+      body:   JSON.stringify({ name, session_id: sessionId, events: eventBatch }),
+    });
+    const d = await r.json();
+    if (!r.ok) { toast(`Error: ${d.message || d.error}`, 'var(--red)'); return; }
+    toast(`Saved "${name}" — hash: ${d.output_hash.slice(0,8)}…`, 'var(--green)');
+    loadReplays();
+    setTab('replays');
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'var(--red)');
+  }
+}
+
+async function loadReplays() {
+  try {
+    const r = await apiFetch('/v1/replay/list');
+    const d = await r.json();
+    if (!r.ok) { toast('Could not load replays', 'var(--red)'); return; }
+    renderReplayList(d.replays || []);
+    setTab('replays');
+  } catch(e) {
+    toast('Load failed: ' + e.message, 'var(--red)');
+  }
+}
+
+function renderReplayList(replays) {
+  if (replays.length === 0) {
+    $('replay-list').innerHTML = '<div class="muted" style="font-size:12px">No replays saved yet.</div>';
+    return;
+  }
+  $('replay-list').innerHTML = replays.map(r => `
+    <div class="replay-item" id="ri-${r.name}">
+      <div class="replay-item-name">${r.name}</div>
+      <div class="replay-item-meta">${r.event_count} events · ${r.session_id} · runs: ${r.run_count}</div>
+      <div class="hash-display">${r.output_hash}</div>
+      <div class="replay-item-actions">
+        <button class="btn-sm btn-primary" onclick="runReplay('${r.name}')">Run &amp; Verify</button>
+        <button class="btn-sm" onclick="deleteReplay('${r.name}')">Delete</button>
+      </div>
+      <div id="rv-${r.name}" style="margin-top:6px"></div>
+    </div>`).join('');
+}
+
+async function runReplay(name) {
+  const el = $(`rv-${name}`);
+  el.innerHTML = '<div class="spinner"></div>';
+  try {
+    const r = await apiFetch(`/v1/replay/${name}/run`, { method: 'POST' });
+    const d = await r.json();
+    if (!r.ok) { el.innerHTML = `<span class="red">${d.message || d.error}</span>`; return; }
+    const cls  = d.hash_match ? 'ok'   : 'fail';
+    const icon = d.hash_match ? '✓' : '✗';
+    el.innerHTML = `
+      <div class="hash-match ${cls}">${icon} Hash ${d.hash_match ? 'verified' : 'MISMATCH'}</div>
+      <div class="hash-display" style="margin-top:4px">Run:  ${d.output_hash}<br>Ref:  ${d.reference_hash}</div>
+      <div class="muted" style="font-size:11px;margin-top:4px">${d.latency_ms.toFixed(1)}ms · ${d.run_at.slice(0,19)}</div>`;
+    toast(d.hash_match ? `✓ ${name} verified` : `✗ Hash mismatch in ${name}!`,
+          d.hash_match ? 'var(--green)' : 'var(--red)');
+  } catch(e) {
+    el.innerHTML = `<span class="red">${e.message}</span>`;
+  }
+}
+
+async function deleteReplay(name) {
+  try {
+    const r = await apiFetch(`/v1/replay/${name}`, { method: 'DELETE' });
+    if (r.status === 204 || r.ok) {
+      toast(`Deleted "${name}"`);
+      loadReplays();
+    }
+  } catch(e) {
+    toast('Delete failed: ' + e.message, 'var(--red)');
+  }
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+
+(function init() {
+  // Restore saved key
+  const saved = localStorage.getItem('adm-api-key');
+  if (saved) $('apiKey').value = saved;
+  $('apiKey').addEventListener('change', () => localStorage.setItem('adm-api-key', $('apiKey').value));
+
+  // Set base URL
+  const base = window.location.origin + (window.BASE_PATH || '/api');
+  $('baseUrl').value = base;
+
+  // Generate session / replay defaults
+  const ts = Date.now().toString(36);
+  $('wsSession').value     = `dash-${ts}`;
+  $('replaySession').value = `replay-${ts}`;
+  $('simSession').value    = `sim-${ts}`;
+
+  // Auto-connect on load
+  checkHealth();
+
+  // Seed a demo batch
+  eventBatch = [
+    { id: 'demo-combat-01',   type: 'combat',   intensity: 0.88, actors: ['Iron Pact'],       tags: ['war','conflict'], payload:{} },
+    { id: 'demo-politics-01', type: 'politics', intensity: 0.65, actors: ['faction:Council'], tags: ['crisis'],         payload:{} },
+    { id: 'demo-ecology-01',  type: 'ecology',  intensity: 0.40, actors: ['region:Tundra'],   tags: ['drought'],        payload:{} },
+  ];
+  eventCounter = 4;
+  renderBatchPreview();
+})();
+</script>
+
+</body>
+</html>

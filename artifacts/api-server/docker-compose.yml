@@ -1,0 +1,65 @@
+# ============================================================================
+# ADM-API — Docker Compose
+# ============================================================================
+#
+# Development / single-node production deployment.
+#
+# Quick start:
+#   docker compose up --build
+#
+# With custom admin key:
+#   ADM_ADMIN_KEY=my_secret docker compose up --build
+#
+# Persistent key storage (api_keys.json) is mounted as a named volume.
+# For multi-node deployments, replace the in-memory key store with Redis
+# — see docs/SCALING.md for the migration path.
+#
+# ============================================================================
+
+version: "3.9"
+
+services:
+  adm-api:
+    build:
+      context:    .
+      dockerfile: Dockerfile
+    image: adm-api:latest
+    container_name: adm-api
+    restart: unless-stopped
+
+    ports:
+      - "8080:8080"
+
+    environment:
+      # ── Server ──────────────────────────────────────────────────────────
+      BASE_PATH:     "/api"
+      WORKERS:       "4"
+      LOG_LEVEL:     "info"
+
+      # ── Auth ────────────────────────────────────────────────────────────
+      # REQUIRED in production: set a strong random value.
+      # Generate one: python3 -c "import secrets; print(secrets.token_hex(32))"
+      ADM_ADMIN_KEY: "${ADM_ADMIN_KEY:-adm_admin_dev_insecure_default}"
+
+    volumes:
+      # Persist API keys and usage data across container restarts.
+      # In production, mount an external volume or replace with Redis.
+      - adm_data:/app/data
+
+    healthcheck:
+      test:         ["CMD", "python", "-c",
+                     "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/healthz')"]
+      interval:     30s
+      timeout:      5s
+      start_period: 15s
+      retries:      3
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+volumes:
+  adm_data:
+    driver: local

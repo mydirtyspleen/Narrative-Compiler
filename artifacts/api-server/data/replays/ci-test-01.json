@@ -1,0 +1,36 @@
+{
+  "name": "ci-test-01",
+  "session_id": "test-session",
+  "event_count": 2,
+  "events": [
+    {
+      "id": "r1",
+      "type": "combat",
+      "intensity": 0.88,
+      "actors": [
+        "Iron Pact"
+      ],
+      "tags": [
+        "war"
+      ],
+      "payload": {}
+    },
+    {
+      "id": "r2",
+      "type": "politics",
+      "intensity": 0.65,
+      "actors": [
+        "Council"
+      ],
+      "tags": [
+        "crisis"
+      ],
+      "payload": {}
+    }
+  ],
+  "world_state": {},
+  "output_hash": "6f224b112aaaa22d51d7651da743fba2be39a4e2e98c0908986c1e971a05e085",
+  "saved_at": "2026-05-21T21:53:29.389274+00:00",
+  "run_count": 2,
+  "last_run_at": "2026-05-21T21:53:44.502123+00:00"
+}

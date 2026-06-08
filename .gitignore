@@ -1,0 +1,88 @@
+# See https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+.expo
+.expo-shared
+
+# dependencies
+node_modules
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage
+/libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+/typings
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.env
+.venv
+env/
+venv/
+build/
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.replit
+.replitignore
+replit.md
+.agents/
+artifacts/api-server/adm_api/__pycache__/
+artifacts/api-server/adm_api/api/__pycache__/
+artifacts/api-server/adm_api/auth/__pycache__/
+artifacts/api-server/adm_api/engine/__pycache__/
+artifacts/api-server/adm_api/middleware/__pycache__/
+artifacts/api-server/adm_api/models/__pycache__/
+artifacts/api-server/adm_api/observability/__pycache__/
+artifacts/api-server/adm_api/replay/__pycache__/
+artifacts/api-server/adm_api/session/__pycache__/
+artifacts/api-server/benchmarks/__pycache__/
+artifacts/api-server/tests/__pycache__/
+
+# System Files
+.DS_Store
+Thumbs.db
+
+.cursor/rules/nx-rules.mdc
+.github/instructions/nx.instructions.md
+
+# Replit
+.cache/
+.local/

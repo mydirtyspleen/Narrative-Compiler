@@ -1,0 +1,44 @@
+{
+  "adm_test_e2f4a6b8c0d1e3f5a7b9c1d3e5f7000100000001": {
+    "key": "adm_test_e2f4a6b8c0d1e3f5a7b9c1d3e5f7000100000001",
+    "name": "Default Test Key",
+    "tier": "test",
+    "rate_limit": 100,
+    "created_at": "2026-05-21T21:04:37.499441+00:00",
+    "active": true,
+    "total_requests": 9,
+    "requests_today": 9,
+    "requests_by_endpoint": {
+      "POST /v1/render": 7,
+      "POST /v1/simulate": 2
+    },
+    "last_used_at": "2026-05-21T21:27:07.352751+00:00",
+    "usage_date": "2026-05-21"
+  },
+  "adm_live_ff77753e90c18af80243f4f70daa2f35427c70fd9011c599ed79e4e54137fb58": {
+    "key": "adm_live_ff77753e90c18af80243f4f70daa2f35427c70fd9011c599ed79e4e54137fb58",
+    "name": "Roblox Studio Integration",
+    "tier": "live",
+    "rate_limit": 1000,
+    "created_at": "2026-05-21T21:07:24.229472+00:00",
+    "active": true,
+    "total_requests": 0,
+    "requests_today": 0,
+    "requests_by_endpoint": {},
+    "last_used_at": null,
+    "usage_date": "2026-05-21"
+  },
+  "adm_live_584f348ba1665728c4f76441db218442d73627d3d84050dcd44bd5a03b5f9248": {
+    "key": "adm_live_584f348ba1665728c4f76441db218442d73627d3d84050dcd44bd5a03b5f9248",
+    "name": "Unity Integration",
+    "tier": "live",
+    "rate_limit": 1000,
+    "created_at": "2026-05-21T21:08:36.796433+00:00",
+    "active": true,
+    "total_requests": 0,
+    "requests_today": 0,
+    "requests_by_endpoint": {},
+    "last_used_at": null,
+    "usage_date": "2026-05-21"
+  }
+}
