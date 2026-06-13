@@ -1,7 +1,7 @@
 [project]
-name = "repl-nix-workspace"
+name = "adm-api"
 version = "0.1.0"
-description = "Add your description here"
+description = "Deterministic real-time narrative infrastructure layer"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.136.1",
